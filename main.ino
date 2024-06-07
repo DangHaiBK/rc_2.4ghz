@@ -43,10 +43,13 @@ volatile unsigned long rx_channel_width[] = {0, 0, 0};
 
 bool brake_active_flag = false;
 bool turn_signal_flag = false;
+bool beacon_flag = true;
 
 uint8_t count_hazard = 0;
 uint8_t count_signal = 0;
 uint8_t count_stop = 0;
+uint8_t count_beacon = 0;
+
 uint8_t directIdle = 0;
 uint16_t valPWMIdle = 0;
 
@@ -78,6 +81,12 @@ void loop() {
   }
   Serial1.println(val_pwm[2]);
   Serial1.println(direct[2]);
+
+  /* Beacon light toggle */
+  if (beacon_flag == true) {
+    count_beacon ++;
+    LED_Beacon(count_beacon);
+  }
 
   /* Forward and Reversed Directions */
   if ((direct[0] == RECEIVER_STICK_MIDDLE) && (val_pwm[0] == RECEIVER_PWM_NEUTRAL))
