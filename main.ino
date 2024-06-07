@@ -60,6 +60,7 @@ void setup() {
   // put your setup code here, to run once:
   rx_init();
   MOTOR_Init();
+  LED_Init();
   Serial1.begin(115200);
 
   while (valPWMIdle != RECEIVER_PWM_NEUTRAL)
