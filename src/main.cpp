@@ -2,8 +2,8 @@
 #include "rx.h"
 
 /* Define constants ---------------------------------------------------------------- */
-#define INTERRUPT_CHANNEL_1   8
-#define INTERRUPT_CHANNEL_2   9
+#define INTERRUPT_CHANNEL_1   9
+#define INTERRUPT_CHANNEL_2   8
 #define INTERRUPT_CHANNEL_3   7
 #define INTERRUPT_CHANNEL_4   6
 #define INTERRUPT_CHANNEL_5   5
