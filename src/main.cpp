@@ -1,18 +1,14 @@
 /* Includes ------------------------------------------------------------------------ */
 #include "rx.h"
-
-/* Define constants ---------------------------------------------------------------- */
-#define INTERRUPT_CHANNEL_1   9
-#define INTERRUPT_CHANNEL_2   8
-#define INTERRUPT_CHANNEL_3   7
-#define INTERRUPT_CHANNEL_4   6
-#define INTERRUPT_CHANNEL_5   5
-#define INTERRUPT_CHANNEL_6   4
+#include "speaker.h"
+#include "config.h"
+#include "sounds/scania/ScaniaV8start.h"
 
 /* Typedef define a new pointer function ------------------------------------------- */
 typedef void (RX_MC6C::*functionPointer)();
 
 /* Variables ----------------------------------------------------------------------- */
+volatile uint16_t sampleIndex = 0;
 uint8_t direct[] = {0, 0, 0, 0, 0, 0};
 uint16_t valPwm[] = {0, 0, 0, 0, 0, 0};
 uint8_t channelInterrupt[6] = {
@@ -34,6 +30,11 @@ RX_MC6C rxMc6c(
     INTERRUPT_CHANNEL_4,
     INTERRUPT_CHANNEL_5,
     INTERRUPT_CHANNEL_6
+);
+
+// Create an instance for speaker
+Speaker speaker(
+    SPEAKER_CHANNEL
 );
 
 /* Static void to create a wrapper for function ------------------------------------- */
@@ -60,6 +61,12 @@ void (*funcArray[6])(void) = {
 /* Setup function ---------------------------------------------------------------- */
 void setup()
 {
+    // Speaker initialization
+    speaker.begin();
+#if ((AUDIO_TEST == 1) && (TRIAL_TEST_1 == 1))
+    // Audio Timers setup
+    speaker.TimerAudioInit(CPU_FREQ, startSampleRate);
+#endif
     // RX initialization
     rxMc6c.begin();
 
@@ -71,6 +78,13 @@ void setup()
 
     // UART initialization
     Serial.begin(9600);
+
+#if (AUDIO_TEST == 1)
+
+    ASSR &= ~(_BV(EXCLK) | _BV(AS2));
+/* Set up Timer 2 with Fast PWM */
+    cli();   // Disable global interrupt
+#endif
 }
 
 /* Loop function ---------------------------------------------------------------- */
@@ -131,3 +145,27 @@ void wrapInterruptFunction_6()
 {
     wrapFunctionCaller(rxMc6c, &RX_MC6C::measuringChannel_6);
 }
+
+#if (AUDIO_TEST == 1)
+    ISR(TIMER1_COMPA_vect) 
+    {
+        if (sampleIndex < startSampleCount) {
+            uint8_t sample = startSamples[sampleIndex];
+
+            // Fade-in
+            if (sampleIndex < AUDIO_FADEIN_DURATION) {
+                sample = (sample * sampleIndex) / AUDIO_FADEIN_DURATION;
+            }
+
+            // Fade-out
+            if (sampleIndex >= startSampleCount - AUDIO_FADEOUT_DURATION) {
+                sample = (sample * (startSampleCount - sampleIndex)) / AUDIO_FADEOUT_DURATION;
+            }
+
+            OCR2B = sample;
+            sampleIndex++;
+        } else {
+            sampleIndex = 0; 
+        }
+    }
+#endif
